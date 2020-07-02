@@ -1,0 +1,33 @@
+{
+    "name": "tulsaschoolsdata/snipe-it-customizations",
+    "description": "Snipe-IT Customizations for Tulsa Public Schools",
+    "type": "library",
+    "license": "AGPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Travis Miller",
+            "email": "milletr@tulsaschools.org"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.2",
+        "laravel/framework": "5.5.*",
+        "laravel/socialite": "^3.4",
+        "league/flysystem-aws-s3-v3": "^1.0",
+        "socialiteproviders/microsoft-graph": "^3.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "TulsaPublicSchools\\SnipeItCustomizations\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "TulsaPublicSchools\\SnipeItCustomizations\\Providers\\ServiceProvider",
+                "TulsaPublicSchools\\SnipeItCustomizations\\Providers\\EventServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable"
+}
