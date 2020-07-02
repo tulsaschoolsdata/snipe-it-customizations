@@ -148,6 +148,11 @@ class SystemBackupRestore extends Command
         $relative = preg_replace('#^'.base_path().'/#', '', "/$filename");
         $absolute = base_path($relative);
 
+        $dirname = dirname($absolute);
+        if (!is_dir($dirname)) {
+            mkdir($dirname, 0755, true);
+        }
+
         file_put_contents($absolute, stream_get_contents($stream));
     }
 
