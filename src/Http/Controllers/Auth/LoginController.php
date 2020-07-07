@@ -29,6 +29,7 @@ class LoginController extends Controller
     {
         $socialite = Socialite::with('graph')->setTenantId(env('GRAPH_TENANT_ID', 'common'))->user();
 
+        // TODO: should we include deleted_at users?
         $user = User::where('email', '=', $socialite->getEmail())->first();
 
         if ($user && ($user->deleted_at || !$user->activated)) {
@@ -40,6 +41,12 @@ class LoginController extends Controller
 
         if (!$user) {
             $user = $this->registerGraphUser($socialite);
+
+            if ($user->getErrors()->count()) {
+                Log::error('Error registering user from Microsoft Graph login', $user->getErrors()->toArray());
+
+                return view('errors.500');
+            }
         }
 
         Auth::login($user, true);
@@ -64,10 +71,9 @@ class LoginController extends Controller
         $user->last_name = $last_name ?: $first_name;
         $user->username = $email;
         $user->email = $email;
-        $user->employee_num = '';
+        $user->password = bcrypt(str_random(20));
         $user->save();
 
         return $user;
     }
-
 }
