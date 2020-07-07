@@ -60,17 +60,12 @@ class LoginController extends Controller
     }
 
     private function registerGraphUser($socialite) {
-        $email = $socialite->getEmail();
-
-        $name = preg_replace('/\s+/', ' ', trim($socialite->getName()));
-        list($first_name, $last_name) = explode(' ', $name, 2);
-
         $user = new User;
 
-        $user->first_name = $first_name;
-        $user->last_name = $last_name ?: $first_name;
-        $user->username = $email;
-        $user->email = $email;
+        $user->first_name = $socialite->givenName;
+        $user->last_name = $socialite->surname;
+        $user->username = $socialite->getEmail();
+        $user->email = $socialite->getEmail();
         $user->password = bcrypt(str_random(20));
         $user->save();
 
