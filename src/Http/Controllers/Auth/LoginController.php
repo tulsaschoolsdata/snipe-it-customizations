@@ -67,6 +67,8 @@ class LoginController extends Controller
         $user->username = $socialite->getEmail();
         $user->email = $socialite->getEmail();
         $user->password = bcrypt(str_random(20));
+        $user->activated = true;
+        $user->activated_at = \Carbon::now();
         $user->save();
 
         return $user;
