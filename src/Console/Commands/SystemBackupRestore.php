@@ -51,14 +51,8 @@ class SystemBackupRestore extends Command
      */
     public function handle()
     {
-        $name = $this->argument('name') ?: $this->option('auto')
-            ? $this->nameChoices()->first()
-            : $this->choice('Choose a backup', $this->nameChoices()->toArray(), 0);
-
-        $version = $this->option('backup') ?: $this->option('auto')
-            ? $this->versionChoices($name)->first()
-            : $this->choice('Choose a version', $this->versionChoices($name)->toArray(), 0);
-
+        $name = $this->argument('name') ?: $this->autoName();
+        $version = $this->option('backup') ?: $this->autoVersion($name);
         $backup = $this->selectBackup($name, $version);
 
         $this->info("Loading backup: {$backup->path()}");
@@ -77,6 +71,18 @@ class SystemBackupRestore extends Command
         }
 
         return $this->_statuses;
+    }
+
+    protected function autoName() {
+        return $this->option('auto')
+            ? $this->nameChoices()->first()
+            : $this->choice('Choose a backup', $this->nameChoices()->toArray(), 0);
+    }
+
+    protected function autoVersion($name) {
+        return $this->option('auto')
+            ? $this->versionChoices($name)->first()
+            : $this->choice('Choose a version', $this->versionChoices($name)->toArray(), 0);
     }
 
     protected function nameChoices() {
