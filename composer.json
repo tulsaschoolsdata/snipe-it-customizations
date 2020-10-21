@@ -28,6 +28,5 @@
                 "TulsaPublicSchools\\SnipeItCustomizations\\Providers\\EventServiceProvider"
             ]
         }
-    },
-    "minimum-stability": "stable"
+    }
 }
