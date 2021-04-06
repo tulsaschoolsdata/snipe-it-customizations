@@ -32,7 +32,7 @@ class SystemBackupRestore extends Command
      *
      * @var string
      */
-    protected $signature = 'snipeit:backup-restore {name?} {--backup=} {--auto}';
+    protected $signature = 'snipeit:backup-restore {name?} {--backup=} {--auto} {--gtid}';
 
     /**
      * Create a new command instance.
@@ -197,7 +197,22 @@ class SystemBackupRestore extends Command
 
         $this->exec([$mysql, $defaults_file, '-e', $drop]);
         $this->exec([$mysql, $defaults_file, '-e', $create]);
-        $this->exec([$mysql, $defaults_file, escapeshellarg($database), '<', escapeshellarg($sqlFilePath)]);
+
+        // AWS Aurora 5.7 Includes @@GLOBAL.GTID_PURGED which requires SUPER
+        //
+        // If we provide the `--gtid` option, these commands will be left in the
+        // SQL. Otherwise we strip them out so that the restore will be more
+        // likely to work universally.
+        //
+        // https://github.com/davidalger/warden/issues/162#issuecomment-661085398
+        //
+        if ($this->option('gtid')) {
+            $this->exec([$mysql, $defaults_file, escapeshellarg($database), '<', escapeshellarg($sqlFilePath)]);
+        } else {
+            $sed = escapeshellcmd('sed');
+            $del = escapeshellarg('/@@GLOBAL.GTID_PURGED/d;/@@SESSION.SQL_LOG_BIN/d');
+            $this->exec([$sed, $del, escapeshellarg($sqlFilePath), '|', $mysql, $defaults_file, escapeshellarg($database)]);
+        }
     }
 
     protected function exec($args) {
