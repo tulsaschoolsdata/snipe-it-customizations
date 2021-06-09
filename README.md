@@ -4,7 +4,6 @@
   - [Restore a Backup](#restore-a-backup)
   - [Authenticate with Microsoft Graph](#authenticate-with-microsoft-graph)
 - [Environment Variables](#environment-variables)
-- [Override Hacks](#override-hacks)
 
 ## The Customizations
 
@@ -65,18 +64,5 @@ Several environment variables are required to function correctly.
 - `GRAPH_TENANT_ID`: Directory (tenant) ID
   - *example: `tulsaschools.onmicrosoft.com`*
 
-## Override Hacks
-
-It’s not possible to [merge config values](https://laravel.com/docs/5.5/packages#configuration) over existing values defined in the application’s config. So we resort to tracking our own copy and clobbering the originals.
-
-```console
-$ composer require tulsaschoolsdata/snipe-it-customizations:dev-master
-$ cp vendor/tulsaschoolsdata/snipe-it-customizations/src/config/backup.php config/backup.php
-$ cp vendor/tulsaschoolsdata/snipe-it-customizations/src/config/filesystems.php config/filesystems.php
-```
-
-[Override Hacks]: #override-hacks
-[config/backup.php]: src/config/backup.php
-[config/filesystems.php]: src/config/filesystems.php
 [Microsoft Graph Socialite Provider]: https://socialiteproviders.netlify.app/providers/microsoft-graph.html
 [Snipe-IT]: https://github.com/snipe/snipe-it
