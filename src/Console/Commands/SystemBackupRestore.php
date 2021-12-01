@@ -67,7 +67,8 @@ class SystemBackupRestore extends Command
 
     protected function statuses() {
         if (null === $this->_statuses) {
-            $this->_statuses = BackupDestinationStatusFactory::createForMonitorConfig(config('backup.monitorBackups'));
+            $config = config('backup.monitorBackups') ?? config('backup.monitor_backups');
+            $this->_statuses = BackupDestinationStatusFactory::createForMonitorConfig($config);
         }
 
         return $this->_statuses;
@@ -87,14 +88,16 @@ class SystemBackupRestore extends Command
 
     protected function nameChoices() {
         return $this->statuses()->map(function (BackupDestinationStatus $backupDestinationStatus) {
-            return $backupDestinationStatus->backupName();
+            return $backupDestinationStatus->backupDestination()->backupName();
         });
     }
 
     protected function versionChoices($name) {
         $backupDestinationStatus = $this->selectBackupDestinationStatus($name);
 
-        // TODO: error if $backupDestinationStatus is null
+        if (null === $backupDestinationStatus) {
+            throw new \Error('error if $backupDestinationStatus is null');
+        }
 
         $prefix = config('backup.backup.destination.filename_prefix');
         $prefix_length = strlen($prefix);
@@ -111,7 +114,7 @@ class SystemBackupRestore extends Command
 
     protected function selectBackupDestinationStatus($name) {
         return $this->statuses()->filter(function (BackupDestinationStatus $backupDestinationStatus, $key) use ($name) {
-            return $backupDestinationStatus->backupName() === $name;
+            return $backupDestinationStatus->backupDestination()->backupName() === $name;
         })->first();
     }
 
@@ -129,14 +132,21 @@ class SystemBackupRestore extends Command
 
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $filename = $zip->getNameIndex($i);
-            $stream = $zip->getStream($filename);
 
-            $this->line("- {$filename}");
+            // Skip directories listed a files
+            if (substr_compare($filename, '/', -1) === 0) {
+                continue; // endsWith '/'
+            }
+
+            $stream = $zip->getStream($filename);
+            $relative = preg_replace('#^'.base_path().'/#', '', "/$filename");
+
+            $this->line("- {$relative}");
 
             if (preg_match('#^db-dumps/#', $filename)) {
                 $this->restoreDatabase($stream);
             } else {
-                $this->restoreFile($stream, $filename);
+                $this->restoreFile($stream, $relative);
             }
         }
 
@@ -150,11 +160,10 @@ class SystemBackupRestore extends Command
         return stream_get_meta_data($zipFileHandle)['uri'];
     }
 
-    protected function restoreFile($stream, $filename) {
-        $relative = preg_replace('#^'.base_path().'/#', '', "/$filename");
+    protected function restoreFile($stream, $relative) {
         $absolute = base_path($relative);
-
         $dirname = dirname($absolute);
+
         if (!is_dir($dirname)) {
             mkdir($dirname, 0755, true);
         }
@@ -167,7 +176,7 @@ class SystemBackupRestore extends Command
         // TOOD: pick the connection based on the db-dumps/{$type}-{$dbName}.sql?
 
         $sqlFileHandle = tmpFile();
-        fwrite($sqlFileHandle, stream_get_contents($stream));
+        stream_copy_to_stream($stream, $sqlFileHandle);
         $sqlFilePath = stream_get_meta_data($sqlFileHandle)['uri'];
 
         $host = config('database.connections.mysql.host');
@@ -216,6 +225,12 @@ class SystemBackupRestore extends Command
     }
 
     protected function exec($args) {
-        $this->line( shell_exec(implode(' ', $args)) );
+        $exec = implode(' ', $args);
+        $this->comment($exec);
+
+        $out = shell_exec($exec);
+        if ($out) {
+            $this->line($out);
+        }
     }
 }
